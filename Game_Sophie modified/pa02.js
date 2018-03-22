@@ -100,12 +100,12 @@ The user moves a cube around the board trying to knock balls into a cone
         
             // create the NPC
             npcBad = createNPC(0xff0000,10,10,10);
-            npcBad.position.set(25,5,-30);
+            npcBad.position.set(10,5,-30);
             npcBad.addEventListener('collision',function(other_object){
             	if (other_object==avatar){
           		gameState.health--;
-          		npc.__dirtyPosition = true;
-          		npc.position.set(randN(60) - 30 ,3,randN(60) - 30);
+          		npcBad.__dirtyPosition = true;
+          		npcBad.position.set(randN(60) - 30 ,3,randN(60) - 30);
           		if( gameState.health < 1){
           			gameState.scene='youlost';
           		}
