@@ -135,7 +135,7 @@ The user moves a cube around the board trying to knock balls into a cone
           		npcBad.__dirtyPosition = true;
           		npcBad.position.set(randN(60) - 30 ,3,randN(60) - 30);
           		if( gameState.health < 1){
-          			gameState.scene='youlost';
+          			gameState.scene='gameover';
           		}
         	}
             })
