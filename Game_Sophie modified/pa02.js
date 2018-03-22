@@ -19,7 +19,7 @@ The user moves a cube around the board trying to knock balls into a cone
 
 	var platform, spin, raise, counter;
 
-	var endScene, endCamera, endText;
+	var endScene, endCamera, endText, overScene, gameOver, welcome, startScene;
 
 
     var healthTemp = 0;
@@ -31,7 +31,7 @@ The user moves a cube around the board trying to knock balls into a cone
 		    camera:camera}
 
 	var gameState =
-	     {score:0, health:10, scene:'main', camera:'none' }
+	     {score:0, health:10, scene:'welcome', camera:'none' }
 
 
 	// Here is the main game control
@@ -55,6 +55,32 @@ The user moves a cube around the board trying to knock balls into a cone
 		endCamera.lookAt(0,0,0);
 
 	}
+	
+	function createGameOver(){
+		overScene = initScene();
+		gameOver = createSkyBox('gameover.png',2);
+		//endText.rotateX(Math.PI);
+		overScene.add(gameOver);
+		var light1 = createPointLight();
+		light1.position.set(0,200,20);
+		overScene.add(light1);
+		endCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000 );
+		endCamera.position.set(0,50,1);
+		endCamera.lookAt(0,0,0);
+	}
+	
+	function createWelcome(){
+		welcome = initScene();
+		gameStart = createSkyBox('welcome.png',5);
+		//endText.rotateX(Math.PI);
+		welcome.add(gameStart);
+		var light1 = createPointLight();
+		light1.position.set(0,200,20);
+		welcome.add(light1);
+		endCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000 );
+		endCamera.position.set(0,50,1);
+		endCamera.lookAt(0,0,0);
+	}
 
 	/**
 	  To initialize the scene, we initialize each of its components
@@ -63,6 +89,8 @@ The user moves a cube around the board trying to knock balls into a cone
       initPhysijs();
 			scene = initScene();
 			createEndScene();
+			createGameOver();
+			createWelcome();
 			initRenderer();
 			createMainScene();
 	}
@@ -191,6 +219,62 @@ The user moves a cube around the board trying to knock balls into a cone
 						if (gameState.score==numBalls) {
 							gameState.scene='youwon';
 						}
+						// make the ball drop below the scene ..
+						// threejs doesn't let us remove it from the schene...
+						this.position.y = this.position.y - 100;
+						this.__dirtyPosition = true;
+					}
+				}
+			)
+		}
+		
+		addRedBalls();
+		addGreenBalls();
+	}
+	
+	
+	function addRedBalls(){
+		var numBalls = 2
+
+
+		for(i=0;i<numBalls;i++){
+			var ball = createRedBall();
+			ball.position.set(randN(20),30,randN(20));
+			scene.add(ball);
+
+			ball.addEventListener( 'collision',
+				function( other_object, relative_velocity, relative_rotation, contact_normal ) {
+					if (other_object==avatar){
+						console.log("redball "+i+" hit the avatar");
+						gameState.health -= 1;  // subtract health
+						if (gameState.health==0) {
+							gameState.scene='gameover';
+						}
+						// make the ball drop below the scene ..
+						// threejs doesn't let us remove it from the schene...
+						this.position.y = this.position.y - 100;
+						this.__dirtyPosition = true;
+					}
+				}
+			)
+		}
+	}
+	
+	
+	function addGreenBalls(){
+		var numBalls = 2
+
+		
+		for(i=0;i<numBalls;i++){
+			var ball = createGreenBall();
+			ball.position.set(randN(20)+15,30,randN(20)+15);
+			scene.add(ball);
+
+			ball.addEventListener( 'collision',
+				function( other_object, relative_velocity, relative_rotation, contact_normal ) {
+					if (other_object==avatar){
+						console.log("greenball "+i+" hit the avatar");
+						gameState.health += 1;  // add one to the health
 						// make the ball drop below the scene ..
 						// threejs doesn't let us remove it from the schene...
 						this.position.y = this.position.y - 100;
@@ -382,7 +466,29 @@ The user moves a cube around the board trying to knock balls into a cone
 	function createBall(){
 		//var geometry = new THREE.SphereGeometry( 4, 20, 20);
 		var geometry = new THREE.SphereGeometry( 1, 16, 16);
-		var material = new THREE.MeshLambertMaterial( { color: 0xffff00} );
+		var material = new THREE.MeshLambertMaterial( { color:0xffff00 } );
+		var pmaterial = new Physijs.createMaterial(material,0.9,0.5);
+    var mesh = new Physijs.BoxMesh( geometry, material );
+		mesh.setDamping(0.1,0.1);
+		mesh.castShadow = true;
+		return mesh;
+	}
+	
+	function createRedBall(){
+		//var geometry = new THREE.SphereGeometry( 4, 20, 20);
+		var geometry = new THREE.SphereGeometry( 1, 16, 16);
+		var material = new THREE.MeshLambertMaterial( { color:0xff0000 } );
+		var pmaterial = new Physijs.createMaterial(material,0.9,0.5);
+    var mesh = new Physijs.BoxMesh( geometry, material );
+		mesh.setDamping(0.1,0.1);
+		mesh.castShadow = true;
+		return mesh;
+	}
+	
+	function createGreenBall(){
+		//var geometry = new THREE.SphereGeometry( 4, 20, 20);
+		var geometry = new THREE.SphereGeometry( 1, 16, 16);
+		var material = new THREE.MeshLambertMaterial( { color:0x00ff00 } );
 		var pmaterial = new Physijs.createMaterial(material,0.9,0.5);
     var mesh = new Physijs.BoxMesh( geometry, material );
 		mesh.setDamping(0.1,0.1);
@@ -411,11 +517,16 @@ The user moves a cube around the board trying to knock balls into a cone
 		console.log("Keydown:"+event.key);
 		//console.dir(event);
 		// first we handle the "play again" key in the "youwon" scene
-		if (gameState.scene == 'youwon' && event.key=='r') {
+		if (gameState.scene == 'youwon' || gameState.scene == 'gameover' && event.key=='r') {
 			gameState.scene = 'main';
 			gameState.score = 0;
 			addBalls();
 			return;
+		}else if(gameState.scene == 'welcome' && event.key=='p'){
+			gameState.scene = 'main';
+			gameState.score = 0;
+			addBalls();
+			return;	
 		}
 
 		// this is the regular scene
@@ -540,10 +651,19 @@ The user moves a cube around the board trying to knock balls into a cone
 		requestAnimationFrame( animate );
 
 		switch(gameState.scene) {
+			
+			case "gameover":
+				renderer.render( overScene, endCamera );
+				break;
 
 			case "youwon":
 				endText.rotateY(0.005);
 				renderer.render( endScene, endCamera );
+				break;
+				
+			case "welcome":
+				endText.rotateY(0.005);
+				renderer.render( welcome, endCamera );
 				break;
 
 			case "main":
